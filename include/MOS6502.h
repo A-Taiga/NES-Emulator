@@ -8,14 +8,20 @@
 
 
 /*
+
+https://www.nesdev.org/wiki/Instruction_reference
+
+data is stored in little-endien
+
 PC	program counter	(16 bit)
 AC	accumulator	(8 bit)
 X	X register	(8 bit)
 Y	Y register	(8 bit)
 SR	status register [NV-BDIZC]	(8 bit)
 SP	stack pointer	(8 bit)
-*/
 
+
+*/
 
 namespace CPU
 {
@@ -34,13 +40,18 @@ namespace CPU
             C = 1 << 0,
         };
 
+        struct Opcode
+        {
+            std::string mnemonic;
+            void (MOS6502::*opcode)(void);
+            int  (MOS6502::*mode)(void);
+            int cycles;
+        };
+
     public:
 
-        // using write_cb = std::function <bool (word, byte&)>;
-        // using read_cb  = std::function <bool (word, byte&)>;
-
-        using write_cb = std::function <void(word,byte)>;
-        using read_cb = std::function <byte(word)>;
+        using write_cb = std::function <void(const word,const byte)>;
+        using read_cb = std::function <byte(const word)>;
 
         MOS6502 (read_cb, write_cb);
 
@@ -55,9 +66,12 @@ namespace CPU
 
     private:
 
+        static constexpr u16 stk_begin = 0x0100;
+
+
         /* READ WRITE CALLBACKS */
-        write_cb bus_write;
-        read_cb  bus_read;
+        write_cb write;
+        read_cb  read;
 
 
         /* REGISTERS */
@@ -67,6 +81,18 @@ namespace CPU
         byte Y;     // y register
         byte SR;    // status register
         byte SP;    // stack pointer
+        
+        // current instruction info
+        struct
+        {
+            Opcode* ins;
+            word address;
+            int cycles;
+        } current;
+
+        void set_flag (const Flag, const bool);
+        void stack_push (const byte val);
+        u8 stack_pop (void);
 
         /* OPCODES */
         void BRK (void); void ORA (void); void ASL (void); void PHP (void); void BPL (void);
@@ -97,19 +123,8 @@ namespace CPU
         int ZPX (void); // zeropage X-indexed
         int ZPY (void); // zeropage Y-indexed
 
-        void set_flag (const Flag, const bool);
-
-
         /* LOOKUP TABLE */
         using _ = MOS6502;
-        struct Opcode
-        {
-            std::string mnemonic;
-            void (_::*opcode)(void);
-            int  (_::*mode)(void);
-            int cycles;
-        };
-
         static constexpr std::array<Opcode, 256> instruction_set
         {{
             {"BRK", &_::BRK, &_::IMP, 7}, {"ORA", &_::ORA, &_::IDX, 6}, {"???", &_::XXX, &_::IMM, 0}, {"???", &_::XXX, &_::IMP, 0}, {"???", &_::XXX, &_::IMM, 0}, {"ORA", &_::ORA, &_::ZPG, 3}, {"ASL", &_::ASL, &_::ZPG, 5}, {"???", &_::XXX, &_::IMM, 0}, {"PHP", &_::PHP, &_::IMP, 3}, {"ORA", &_::ORA, &_::IMM, 2}, {"ASL", &_::ASL, &_::ACC, 2}, {"???", &_::XXX, &_::IMM, 0}, {"???", &_::XXX, &_::IMM, 0}, {"ORA", &_::ORA, &_::ABS, 4}, {"ASL", &_::ASL, &_::ABS, 6}, {"???", &_::XXX, &_::IMM, 0}, 

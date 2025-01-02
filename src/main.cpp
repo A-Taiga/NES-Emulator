@@ -2,7 +2,6 @@
 
 #include "rom.h"
 #include "MOS6502.h"
-#include <iostream>
 
 int main()
 {
@@ -24,7 +23,7 @@ int main()
         return rom.get_prg_memory()[address];
     };
 
-    // CPU::MOS6502 cpu(read, nullptr);
+    CPU::MOS6502 cpu(read, nullptr);
     // cpu.decompile(rom.size());
 
     return 0;

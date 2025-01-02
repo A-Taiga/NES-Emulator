@@ -3,9 +3,11 @@
 #include <format>
 #include <cstring>
 
+
+
 CPU::MOS6502::MOS6502 (read_cb read, write_cb write)
-: bus_read{read}
-, bus_write{write}
+: read{read}
+, write{write}
 {}
 
 void CPU::MOS6502::print_instruction_set (void) const
@@ -38,78 +40,77 @@ std::string CPU::MOS6502::get_opcode (const byte instruction) const
     return instruction_set[instruction].mnemonic;
 }
 
-
 void CPU::MOS6502::decompile (const word mem_size) 
 {
     word index = 0;
     while (index < mem_size)
     {
-        const Opcode& current = instruction_set[bus_read(index)];
+        const Opcode& current = instruction_set[read(index)];
 
         if (current.mode == &_::IMP) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:>9}", index, bus_read(index), current.mnemonic);
+            std::cout << std::format ("{:04X}: {:02X} {:>9}", index, read(index), current.mnemonic);
             index += 1;
         }
         else if (current.mode == &_::IMM) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} #${:02X}", index, bus_read(index), bus_read(index+1), current.mnemonic, bus_read(index+1));
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} #${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
             index += 2;
         }
         else if (current.mode == &_::ABS) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:} ${:04X} ", index, bus_read(index), bus_read(index+1), bus_read(index+2), current.mnemonic, (bus_read(index+2) << 8) | bus_read(index+1));
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:} ${:04X} ", index, read(index), read(index+1), read(index+2), current.mnemonic, (read(index+2) << 8) | read(index+1));
             index += 3;
         }
         else if (current.mode == &_::ZPG) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, bus_read(index), bus_read(index+1), current.mnemonic, bus_read(index+1));
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
             index += 2;
         }
         else if (current.mode == &_::ABX) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:} ${:04X}, X", index, bus_read(index), bus_read(index+1), bus_read(index+2), current.mnemonic, (bus_read(index+2) << 8) | bus_read(index+1));
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:} ${:04X}, X", index, read(index), read(index+1), read(index+2), current.mnemonic, (read(index+2) << 8) | read(index+1));
             index += 3;
         }
         else if (current.mode == &_::ABY) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:}", index, bus_read(index), bus_read(index+1), bus_read(index+2), current.mnemonic);
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:}", index, read(index), read(index+1), read(index+2), current.mnemonic);
             index += 3;
         }
         else if (current.mode == &_::ZPX) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:>6} ${:02X}", index, bus_read(index+1), current.mnemonic, bus_read(index+1));
+            std::cout << std::format ("{:04X}: {:02X} {:>6} ${:02X}", index, read(index+1), current.mnemonic, read(index+1));
             index += 2;
         }
         else if (current.mode == &_::ZPY) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6}", index, bus_read(index), bus_read(index+1), current.mnemonic);
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6}", index, read(index), read(index+1), current.mnemonic);
             index += 2;
         }
         else if (current.mode == &_::IND) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:}", index, bus_read(index), bus_read(index+1), bus_read(index+2), current.mnemonic);
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:}", index, read(index), read(index+1), read(index+2), current.mnemonic);
             index += 3;
         }
         else if (current.mode == &_::IDX) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, bus_read(index), bus_read(index+1), current.mnemonic, bus_read(index+1));
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
             index += 2;
         }
         else if (current.mode == &_::IDY) 
         { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, bus_read(index), bus_read(index+1), current.mnemonic, bus_read(index+1));
+            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
             index += 2;
         }
         else if (current.mode == &_::REL)
         {
             if (std::strcmp(current.mnemonic.c_str(), "CPX"))
             {
-                word result = bus_read (index+1);
+                word result = read (index+1);
                 if (result & 0x80) 
                     result |= 0xFF00;
                 word addr = index+2 + result;
-                std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:04X}", index, bus_read(index), bus_read(index+1), current.mnemonic, addr); 
+                std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:04X}", index, read(index), read(index+1), current.mnemonic, addr); 
                 index += 2;
             }
         }
@@ -119,6 +120,27 @@ void CPU::MOS6502::decompile (const word mem_size)
         }
         std::cout << '\n';
     }
+}
+
+void CPU::MOS6502::set_flag(const Flag Flag, const bool condition)
+{
+    if (condition)
+        SR |= static_cast <byte> (Flag);
+    else
+        SR &= ~static_cast <byte> (Flag);
+}
+
+void CPU::MOS6502::stack_push (const byte data)
+{
+    --SP;
+    write (stk_begin + SP, data);
+}
+
+u8 CPU::MOS6502::stack_pop (void)
+{
+    const auto result = read (stk_begin + SP);
+    ++SP;
+    return result;
 }
 
 /* ADDRESSING MODES */
@@ -190,74 +212,128 @@ int CPU::MOS6502::ZPY (void)
 
 /* OPCODES */
 
+// break
 void CPU::MOS6502::BRK (void)
 {
-    
+    PC += 2;
+    stack_push ((PC >> 8) & 0x00FF);
+    stack_push (PC & 0x00FF);
+    set_flag(Flag::B, true);
+    stack_push (SR);
+    set_flag(Flag::B, false);
+    set_flag(Flag::I, true);
+    PC = static_cast <word> (read(0xFFFE)) | static_cast <word> (read(0xFFFF) << 8);
 }
 
+// bitwise OR
 void CPU::MOS6502::ORA (void)
 {
-
+    AC |= read(current.address);
+    set_flag(Flag::Z, AC == 0);
+    set_flag(Flag::N, AC & 0x80);
 }
 
+// arithmetic shift left
 void CPU::MOS6502::ASL (void)
 {
-
+    const word result = static_cast <word> (current.ins->mode == &MOS6502::IMP ? AC : read (current.address)) << 1;
+    set_flag (Flag::C, (result & 0xFF00) != 0);
+    set_flag (Flag::Z, (result & 0x00FF) == 0);
+    set_flag (Flag::N, result & 0x0080);
 }
 
+// push processor status
 void CPU::MOS6502::PHP (void)
 {
-
+    set_flag (Flag::B, true);
+    set_flag (Flag::_, true);
+    stack_push (SR);
+    set_flag (Flag::B, false);
+    set_flag (Flag::_, false);
 }
 
+// branch if plus
 void CPU::MOS6502::BPL (void)
 {
-
+    // TODO
 }
 
+// clear carry
 void CPU::MOS6502::CLC (void)
 {
-
+    SR &= ~static_cast <byte> (Flag::C);
 }
 
+// jump to subroutine
 void CPU::MOS6502::JSR (void)
 {
-
+    ++PC;
+    stack_push ((PC >> 8) & 0x00FF);
+    stack_push (PC & 0x00FF);
+    PC = current.address;
 }
 
+// bitwise AND
 void CPU::MOS6502::AND (void)
 {
-
+    AC &= read (current.address);
+    set_flag (Flag::Z, AC == 0);
+    set_flag (Flag::N, AC & 0x80);
 }
 
+// bit test
 void CPU::MOS6502::BIT (void)
 {
-
+    const byte temp = AC & read (current.address);
+    set_flag (Flag::Z, temp == 0);
+    set_flag (Flag::V, temp & 0x40);
+    set_flag (Flag::N, temp & 0x80);
 }
 
+// rotate left
 void CPU::MOS6502::ROL (void)
 {
+    const word result = (static_cast <word> ([&] ()
+    {
+        if (current.ins->mode == &MOS6502::IMP)
+            return AC;
+        else
+            return read (current.address);
+    }()) << 1) | (static_cast <byte> (Flag::C) & SP);
 
+    set_flag (Flag::N, result & 0x0080);
+    set_flag (Flag::Z, (result & 0x00FF) == 0);
+    set_flag (Flag::C, (result & 0xFF00) != 0);
+
+
+    if (current.ins->mode == &MOS6502::IMP)
+        AC = result;
+    else
+        write (current.address, result & 0x00FF);
 }
 
+// pull processor status
 void CPU::MOS6502::PLP (void)
 {
-
+    SR = stack_pop();
 }
 
+// branch if minus
 void CPU::MOS6502::BMI (void)
 {
-
+    // TODO
 }
 
+// set carry
 void CPU::MOS6502::SEC (void)
 {
-
+    set_flag(Flag::C, true);
 }
 
+// return from interrupt
 void CPU::MOS6502::RTI (void)
 {
-
+    // TODO
 }
 
 void CPU::MOS6502::EOR (void)
@@ -475,4 +551,3 @@ void CPU::MOS6502::XXX (void)
 {
 
 }
-
