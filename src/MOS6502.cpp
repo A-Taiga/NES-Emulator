@@ -293,23 +293,23 @@ void CPU::MOS6502::BIT (void)
 // rotate left
 void CPU::MOS6502::ROL (void)
 {
-    const word result = (static_cast <word> ([&] ()
+
+    word result {};
+    
+    if (current.ins->mode == &MOS6502::IMP)
     {
-        if (current.ins->mode == &MOS6502::IMP)
-            return AC;
-        else
-            return read (current.address);
-    }()) << 1) | (static_cast <byte> (Flag::C) & SP);
+        result = (AC << 1) | (static_cast <byte> (Flag::C) & SP);
+        AC = result;
+    }
+    else
+    {
+        result = (read (current.address) << 1) | (static_cast <byte> (Flag::C) & SP);
+        write (current.address, result & 0x00FF);
+    }
 
     set_flag (Flag::N, result & 0x0080);
     set_flag (Flag::Z, (result & 0x00FF) == 0);
     set_flag (Flag::C, (result & 0xFF00) != 0);
-
-
-    if (current.ins->mode == &MOS6502::IMP)
-        AC = result;
-    else
-        write (current.address, result & 0x00FF);
 }
 
 // pull processor status
