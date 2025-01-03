@@ -3,8 +3,6 @@
 #include <format>
 #include <cstring>
 
-
-
 CPU::MOS6502::MOS6502 (read_cb read, write_cb write)
 : read{read}
 , write{write}
@@ -122,6 +120,11 @@ void CPU::MOS6502::decompile (const word mem_size)
     }
 }
 
+void CPU::MOS6502::update (void)
+{
+
+}
+
 void CPU::MOS6502::set_flag(const Flag Flag, const bool condition)
 {
     if (condition)
@@ -136,7 +139,7 @@ void CPU::MOS6502::stack_push (const byte data)
     write (stk_begin + SP, data);
 }
 
-u8 CPU::MOS6502::stack_pop (void)
+byte CPU::MOS6502::stack_pop (void)
 {
     const auto result = read (stk_begin + SP);
     ++SP;
@@ -606,7 +609,6 @@ void CPU::MOS6502::BCC (void)
             ++current.cycles;
 
         PC = current.address;
-
     }
 }
 

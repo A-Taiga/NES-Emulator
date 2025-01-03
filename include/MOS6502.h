@@ -11,7 +11,9 @@
 
 https://www.nesdev.org/wiki/Instruction_reference
 
-data is stored in little-endien
+https://www.masswerk.at/6502/6502_instruction_set.html#BVC
+
+data is stored in little-endien (LLHH)
 
 PC	program counter	(16 bit)
 AC	accumulator	(8 bit)
@@ -50,7 +52,7 @@ namespace CPU
 
     public:
 
-        using write_cb = std::function <void(const word,const byte)>;
+        using write_cb = std::function <void(const word, const byte)>;
         using read_cb = std::function <byte(const word)>;
 
         MOS6502 (read_cb, write_cb);
@@ -63,11 +65,12 @@ namespace CPU
 
         void decompile (const word mem_size);
 
+        void update (void);
+
 
     private:
 
-        static constexpr u16 stk_begin = 0x0100;
-
+        static constexpr word stk_begin = 0x0100;
 
         /* READ WRITE CALLBACKS */
         write_cb write;
@@ -93,7 +96,7 @@ namespace CPU
 
         void set_flag (const Flag, const bool);
         void stack_push (const byte val);
-        u8 stack_pop (void);
+        byte stack_pop (void);
 
         /* OPCODES */
         void BRK (void); void ORA (void); void ASL (void); void PHP (void); void BPL (void);
