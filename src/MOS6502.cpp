@@ -266,7 +266,18 @@ int CPU::MOS6502::ZPY (void)
 // break
 void CPU::MOS6502::BRK (void)
 {
+    ++PC;
 
+    stack_push (PC & 0xFF00);
+    stack_push (PC & 0x00FF);
+
+    set_flag (Flag::B, true);
+    stack_push (SR);
+    set_flag (Flag::B, false);
+
+    set_flag (Flag::I, true);
+
+    PC = read (0xFFFE) | (read (0xFFFF) << 8);
 }
 
 // bitwise OR
@@ -304,7 +315,19 @@ void CPU::MOS6502::PHP (void)
 // branch if plus
 void CPU::MOS6502::BPL (void)
 {
-    // TODO
+    if (!(static_cast <byte> (Flag::N) & SR))
+    {
+        // branch taken so add a cycle
+        ++current.cycles;
+
+        current.address += PC;
+
+        // page boundry crossed
+        if ((current.address & 0xFF00) != (PC & 0xFF00 ))
+            ++current.cycles;
+            
+        PC = current.address;
+    }
 }
 
 // clear carry
@@ -368,7 +391,19 @@ void CPU::MOS6502::PLP (void)
 // branch if minus
 void CPU::MOS6502::BMI (void)
 {
-    // TODO
+    if (!(static_cast <byte> (Flag::N) & SR))
+    {
+        // branch taken so add cycle
+        ++current.cycles;
+
+        current.address += PC;
+
+        // page boundry crossed
+        if ((current.address & 0xFF00) != (PC & 0xFF00))
+            ++current.cycles;
+
+        PC = current.address;
+    }
 }
 
 // set carry
@@ -380,7 +415,14 @@ void CPU::MOS6502::SEC (void)
 // return from interrupt
 void CPU::MOS6502::RTI (void)
 {
-    // TODO
+    SR = stack_pop();
+
+    // these two flags are ignored when returning from the stack
+    SR &= ~static_cast <byte> (Flag::B);
+    SR &= ~static_cast <byte> (Flag::_);
+
+    PC = stack_pop();
+    PC |= stack_pop() << 8;
 }
 
 // bitwise exclusive OR
@@ -435,189 +477,371 @@ void CPU::MOS6502::BVC (void)
     }
 }
 
+// clear interrupt disable
 void CPU::MOS6502::CLI (void)
 {
-
+    set_flag (Flag::I, false);
 }
 
+// return from subroutinef
 void CPU::MOS6502::RTS (void)
 {
-
+    const byte low = stack_pop();
+    const byte high = stack_pop();
+    PC = (high << 8) | low;
+    ++PC;
 }
 
+// pull accumulator
 void CPU::MOS6502::PLA (void)
 {
-
+    AC = stack_pop();
+    set_flag (Flag::Z, AC == 0x00);
+    set_flag (Flag::N, AC & 0x80);
 }
 
+// add with carry
 void CPU::MOS6502::ADC (void)
 {
+    current.data = read (current.address);
 
+    const word result = AC + current.data + (static_cast <byte> (Flag::C) & SR);
+    
+    set_flag (Flag::C, (result & 0xFF00) != 0);
+    set_flag (Flag::Z, result == 0);
+    set_flag (Flag::V, ~(result ^ AC) & (result ^ current.data) & 0x0080);
+    set_flag (Flag::N, result & 0x0080);
+    
+    AC = result & 0x00FF;
 }
 
+// rotate right
 void CPU::MOS6502::ROR (void)
 {
+    current.data = current.ins->mode == &MOS6502::ACC ? AC : read (current.address);
 
+    set_flag (Flag::C, current.data & 0x80);
+    
+    current.data >>= 1;
+    current.data |= (static_cast <byte> (Flag::C) & SP) << 7;
+    
+    set_flag (Flag::Z, current.data == 0x00);
+    set_flag (Flag::N, current.data & 0x80);
+
+    if (current.ins->mode == &MOS6502::ACC)
+        AC = current.data;
+    else
+        write (current.address, current.data);
 }
 
+// branch if overflow set
 void CPU::MOS6502::BVS (void)
 {
+    if (SR & static_cast <byte> (Flag::V))
+    {
+        // branch taken cycles added
+        ++current.cycles;
+        
+        current.address += PC;
 
+        // page boundry crossed
+        if ((current.address & 0xFF00) != (PC & 0xFF00))
+            ++current.cycles;
+
+        PC = current.address;
+    }
 }
 
+// set interrupt disable
 void CPU::MOS6502::SEI (void)
 {
-
+    set_flag (Flag::I, true);
 }
 
 void CPU::MOS6502::STA (void)
 {
-
+    write (current.address, AC);
 }
 
+// store Y
 void CPU::MOS6502::STY (void)
 {
-
+    write (current.address, Y);
 }
 
+// store X
 void CPU::MOS6502::STX (void)
 {
-
+    write (current.address, X);
 }
 
+// decrement Y
 void CPU::MOS6502::DEY (void)
 {
-
+    --Y;
+    set_flag (Flag::Z, Y == 0x00);
+    set_flag (Flag::N, Y & 0x80);
 }
 
+// transfer X to accumulator
 void CPU::MOS6502::TXA (void)
 {
-
+    AC = X;
+    set_flag (Flag::Z, AC == 0x00);
+    set_flag (Flag::N, AC & 0x80);
 }
 
+// branch if carry clear
 void CPU::MOS6502::BCC (void)
 {
+    if (!(SR & static_cast <byte> (Flag::C)))
+    {
+        // branch taken
+        ++current.cycles;
 
+        current.address += PC;
+
+        // page boundry crossed
+        if ((current.address & 0xFF00) != (PC & 0xFF00))
+            ++current.cycles;
+
+        PC = current.address;
+
+    }
 }
 
+// transfer Y to accumulator
 void CPU::MOS6502::TYA (void)
 {
-
+    AC = Y;
+    set_flag (Flag::Z, AC == 0x00);
+    set_flag (Flag::N, AC & 0x80);
 }
 
+// transfer X to stack pointer
 void CPU::MOS6502::TXS (void)
 {
-
+    SP = X;
 }
 
+// load Y
 void CPU::MOS6502::LDY (void)
 {
-
+    Y = read (current.address);
+    set_flag (Flag::Z, Y == 0x00);
+    set_flag (Flag::N, Y & 0x80);
 }
 
+// load accumulator
 void CPU::MOS6502::LDA (void)
 {
-
+    AC = read (current.address);
+    set_flag (Flag::Z, AC == 0x00);
+    set_flag (Flag::N, AC & 0x80);
 }
 
+// load X
 void CPU::MOS6502::LDX (void)
 {
-
+    X = read (current.address);
+    set_flag (Flag::Z, X == 0x00);
+    set_flag (Flag::N, X & 0x80);
 }
 
+// transfer accumulator to Y
 void CPU::MOS6502::TAY (void)
 {
-
+    Y = AC;
+    set_flag (Flag::Z, Y == 0x00);
+    set_flag (Flag::N, Y & 0x80);
 }
 
+// transfer accumulator to X
 void CPU::MOS6502::TAX (void)
 {
-
+    X = AC;
+    set_flag (Flag::Z, X == 0x00);
+    set_flag (Flag::N, X & 0x80);
 }
 
+// branch if carry set
 void CPU::MOS6502::BCS (void)
 {
+    if (SR & static_cast <byte> (Flag::C))
+    {
+        // branch taken cycles added
+        ++current.cycles;
+        
+        current.address += PC;
 
+        // page boundry crossed
+        if ((current.address & 0xFF00) != (PC & 0xFF00))
+            ++current.cycles;
+
+        PC = current.address;
+    }
 }
 
+// clear overflow
 void CPU::MOS6502::CLV (void)
 {
-
+    set_flag (Flag::V, false);
 }
 
+// transfer stack pointer to X
 void CPU::MOS6502::TSX (void)
 {
-
+    X = SP;
+    set_flag (Flag::Z, X == 0x00);
+    set_flag (Flag::N, X & 0x80);
 }
 
+// compare Y
 void CPU::MOS6502::CPY (void)
 {
+    current.data = read (current.address);
 
+    set_flag (Flag::C, Y >= current.data);
+    set_flag (Flag::Z, Y == 0x00);
+    set_flag (Flag::N, (Y - current.data) & 0x80);
 }
 
+// compare accumulator
 void CPU::MOS6502::CMP (void)
 {
+    current.data = read (current.address);
 
+    set_flag (Flag::C, AC >= current.data);
+    set_flag (Flag::Z, AC == 0x00);
+    set_flag (Flag::N, (AC - current.data) & 0x80);
 }
 
+// decrement memory
 void CPU::MOS6502::DEC (void)
 {
+    current.data = read (current.address);
+    
+    --current.data;
 
+    set_flag (Flag::Z, current.data == 0x00);
+    set_flag (Flag::N, current.data & 0x80);
+
+    write (current.address, current.data);
 }
 
+// increment Y
 void CPU::MOS6502::INY (void)
 {
-
+    ++Y;
+    
+    set_flag (Flag::Z, Y == 0x0);
+    set_flag (Flag::N, Y & 0x80);
 }
 
+// decrement X
 void CPU::MOS6502::DEX (void)
 {
-
+    --X;
+    
+    set_flag (Flag::Z, X == 0x0);
+    set_flag (Flag::N, X & 0x80);
 }
 
+// branch if not equal
 void CPU::MOS6502::BNE (void)
 {
+    if (!(SR & static_cast <byte> (Flag::Z)))
+    {
+        // branch taken cycles added
+        ++current.cycles;
+        
+        current.address += PC;
 
+        // page boundry crossed
+        if ((current.address & 0xFF00) != (PC & 0xFF00))
+            ++current.cycles;
+
+        PC = current.address;
+    }
 }
 
+// clear decimal
 void CPU::MOS6502::CLD (void)
 {
-
+    set_flag(Flag::D, false);
 }
 
+// compare X
 void CPU::MOS6502::CPX (void)
 {
+    current.data = read (current.address);
 
+    set_flag (Flag::C, X >= current.data);
+    set_flag (Flag::Z, X == current.data);
+    set_flag (Flag::N, (X - current.data) & 0x80);
 }
 
+// subtract with carry
 void CPU::MOS6502::SBC (void)
 {
+    current.data = read (current.address);
 
+    const word result = AC + ~current.data + (static_cast <byte> (Flag::C) & SR);
+
+    set_flag (Flag::C, ~(result < 0x00));
+    set_flag (Flag::Z, result == 0x00);
+    set_flag (Flag::V, (result ^ AC) & (result ^ ~current.data) & 0x80);
+    set_flag (Flag::N, result & 0x80);
+
+    AC = result & 0x00FF;
 }
 
+// increment memory
 void CPU::MOS6502::INC (void)
 {
+    current.data = read (current.address);
+    
+    ++current.data;
+   
+    set_flag (Flag::Z, current.data == 0x00);
+    set_flag (Flag::N, current.data & 0x80);
 
+    write (current.address, current.data);
 }
 
+// increment X
 void CPU::MOS6502::INX (void)
 {
-
+    ++X;
+    
+    set_flag (Flag::Z, X == 0x00);
+    set_flag (Flag::N, X & 0x80);
 }
 
 void CPU::MOS6502::NOP (void)
-{
-
-}
+{}
 
 void CPU::MOS6502::BEQ (void)
 {
+    if (SR & static_cast <byte> (Flag::Z))
+    {
+        // branch taken cycles added
+        ++current.cycles;
+        
+        current.address += PC;
 
+        // page boundry crossed
+        if ((current.address & 0xFF00) != (PC & 0xFF00))
+            ++current.cycles;
+
+        PC = current.address;
+    }
 }
 
+// set decimal
 void CPU::MOS6502::SED (void)
 {
-
+    set_flag (Flag::D, true);
 }
 
 // empty instruction (illegal)
