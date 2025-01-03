@@ -92,12 +92,12 @@ void CPU::MOS6502::decompile (const word mem_size)
             std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:}", index, read(index), read(index+1), read(index+2), current.mnemonic);
             index += 3;
         }
-        else if (current.mode == &_::IDX) 
+        else if (current.mode == &_::XIZ) 
         { 
             std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
             index += 2;
         }
-        else if (current.mode == &_::IDY) 
+        else if (current.mode == &_::YIZ) 
         { 
             std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
             index += 2;
@@ -143,70 +143,121 @@ u8 CPU::MOS6502::stack_pop (void)
     return result;
 }
 
-/* ADDRESSING MODES */
+/* 
+    ADDRESSING MODES 
 
+    some of these functions will return an extra cycle 
+    if a page boundry was crossed
+*/
+
+
+// accumulator
 int CPU::MOS6502::ACC (void)
 {
+    current.data = AC;
     return 0;
 }
 
+// absolute
 int CPU::MOS6502::ABS (void)
 {
+    const byte low = read (PC++);
+    const byte high = read (PC++);
+    current.address = (high << 8) | low;
     return 0;
 }
 
+// absolute X
 int CPU::MOS6502::ABX (void)
 {
-    return 0;
+    const byte low = read (PC++);
+    const byte high = read (PC++);
+    current.address = ((high << 8) | low) + X;
+    return (current.address & 0xFF00) != (high << 8) ? 1 : 0;
 }
 
+// absolute Y
 int CPU::MOS6502::ABY (void)
 {
-    return 0;
+    const byte low = read (PC++);
+    const byte high = read (PC++);
+    current.address = ((high << 8) | low) + Y;
+    return (current.address & 0xFF00) != (high << 8) ? 1 : 0;
 }
 
+// # / immediate 
 int CPU::MOS6502::IMM (void)
 {
+    current.address = PC++;
     return 0;
 }
 
+// implied
 int CPU::MOS6502::IMP (void)
 {
+    // does nothing?
     return 0;
 }
 
+// indirect
 int CPU::MOS6502::IND (void)
 {
+    const byte low = read (PC++);
+    const byte high = read (PC++);
+    current.address = (high << 8) | low;
     return 0;
 }
 
-int CPU::MOS6502::IDX (void)
+// X-indexed indirect zeropage address
+// operand is zeropage address; effective address is word in (LL + X, LL + X + 1), inc. without carry: C.w($00LL + X)
+int CPU::MOS6502::XIZ (void)
 {
+    const byte temp = read (PC++);
+    const byte low = read (temp + X);
+    const byte high = read (temp + X + 1);
+    current.address = (high << 8) | low;
     return 0;
 }
 
-int CPU::MOS6502::IDY (void)
+
+// Y-indexed indirect zeropage address
+// operand is zeropage address; effective address is word in (LL, LL + 1) incremented by Y with carry: C.w($00LL) + Y
+int CPU::MOS6502::YIZ (void)
 {
-    return 0;
+    const byte temp = read (PC++);
+    const byte low = read (temp);
+    const byte high = read (temp + 1);
+    current.address = ((high << 8) | low) + Y;
+    return (current.address & 0xFF00) != (high << 8) ? 1 : 0;
 }
 
+// relative
+// branch target is PC + signed offset BB 
 int CPU::MOS6502::REL (void)
 {
+    current.address = read (PC);
+    current.address |= current.address & 0x80 ? 0xFF00 : 0x0000;
     return 0;
 }
 
+// zeropage
 int CPU::MOS6502::ZPG (void)
 {
+    current.address = read (PC++);
     return 0;
 }
 
+// zeropage X-indexed
 int CPU::MOS6502::ZPX (void)
 {
+    current.address = read (PC++) + X;
     return 0;
 }
 
+// zeropage Y-indexed
 int CPU::MOS6502::ZPY (void)
 {
+    current.address = read (PC++) + Y;
     return 0;
 }
 
@@ -215,31 +266,29 @@ int CPU::MOS6502::ZPY (void)
 // break
 void CPU::MOS6502::BRK (void)
 {
-    PC += 2;
-    stack_push ((PC >> 8) & 0x00FF);
-    stack_push (PC & 0x00FF);
-    set_flag(Flag::B, true);
-    stack_push (SR);
-    set_flag(Flag::B, false);
-    set_flag(Flag::I, true);
-    PC = static_cast <word> (read(0xFFFE)) | static_cast <word> (read(0xFFFF) << 8);
+
 }
 
 // bitwise OR
 void CPU::MOS6502::ORA (void)
 {
-    AC |= read(current.address);
-    set_flag(Flag::Z, AC == 0);
-    set_flag(Flag::N, AC & 0x80);
+    AC |= read (current.address);
+    set_flag (Flag::Z, AC == 0x00);
+    set_flag (Flag::N, AC & 0x80);
 }
 
 // arithmetic shift left
 void CPU::MOS6502::ASL (void)
 {
-    const word result = static_cast <word> (current.ins->mode == &MOS6502::IMP ? AC : read (current.address)) << 1;
-    set_flag (Flag::C, (result & 0xFF00) != 0);
-    set_flag (Flag::Z, (result & 0x00FF) == 0);
-    set_flag (Flag::N, result & 0x0080);
+    current.data = current.ins->mode == &MOS6502::ACC ? AC : read (current.address);
+    set_flag (Flag::C, current.data * 0x80);
+    current.data <<= 1;
+    set_flag (Flag::Z, current.data == 0x00);
+    set_flag (Flag::N, current.data & 0x80);
+    if (current.ins->mode == &MOS6502::ACC)
+        AC = current.data;
+    else
+        write (current.address, current.data);
 }
 
 // push processor status
@@ -277,7 +326,7 @@ void CPU::MOS6502::JSR (void)
 void CPU::MOS6502::AND (void)
 {
     AC &= read (current.address);
-    set_flag (Flag::Z, AC == 0);
+    set_flag (Flag::Z, AC == 0x00);
     set_flag (Flag::N, AC & 0x80);
 }
 
@@ -285,7 +334,8 @@ void CPU::MOS6502::AND (void)
 void CPU::MOS6502::BIT (void)
 {
     const byte temp = AC & read (current.address);
-    set_flag (Flag::Z, temp == 0);
+    
+    set_flag (Flag::Z, temp == 0x00);
     set_flag (Flag::V, temp & 0x40);
     set_flag (Flag::N, temp & 0x80);
 }
@@ -293,23 +343,20 @@ void CPU::MOS6502::BIT (void)
 // rotate left
 void CPU::MOS6502::ROL (void)
 {
-
-    word result {};
+    current.data = current.ins->mode == &MOS6502::ACC ? AC : read (current.address);
     
-    if (current.ins->mode == &MOS6502::IMP)
-    {
-        result = (AC << 1) | (static_cast <byte> (Flag::C) & SP);
-        AC = result;
-    }
+    set_flag (Flag::C, current.data & 0x80);
+    
+    current.data <<= 1;
+    current.data |= static_cast <byte> (Flag::C) & SP;
+    
+    set_flag (Flag::Z, current.data == 0x00);
+    set_flag (Flag::N, current.data & 0x80);
+    
+    if (current.ins->mode == &MOS6502::ACC)
+        AC = current.data;
     else
-    {
-        result = (read (current.address) << 1) | (static_cast <byte> (Flag::C) & SP);
-        write (current.address, result & 0x00FF);
-    }
-
-    set_flag (Flag::N, result & 0x0080);
-    set_flag (Flag::Z, (result & 0x00FF) == 0);
-    set_flag (Flag::C, (result & 0xFF00) != 0);
+        write (current.address, current.data);
 }
 
 // pull processor status
@@ -336,29 +383,56 @@ void CPU::MOS6502::RTI (void)
     // TODO
 }
 
+// bitwise exclusive OR
 void CPU::MOS6502::EOR (void)
 {
-
+    AC ^= read (current.address);
+    set_flag (Flag::Z, AC == 0x0);
+    set_flag (Flag::N, AC & 0x80);
 }
 
+// logical shift right
 void CPU::MOS6502::LSR (void)
 {
-
+    current.data = current.ins->mode == &MOS6502::ACC ? AC : read (current.address);
+    set_flag (Flag::C, current.data & 0x01);
+    current.data >>= 1;
+    set_flag (Flag::Z, current.data == 0x00);
+    set_flag (Flag::N, current.data & 0x80);
+    if (current.ins->mode == &MOS6502::ACC)
+        AC = current.data;
+    else
+        write (current.address, current.data);
 }
 
+// push accumulator
 void CPU::MOS6502::PHA (void)
 {
-
+    stack_push (AC);
 }
 
+// jump
 void CPU::MOS6502::JMP (void)
 {
-
+    PC = current.address;
 }
 
+// branch if overflow clear
 void CPU::MOS6502::BVC (void)
 {
+    if (!(static_cast <byte> (Flag::V) & SR))
+    {
+        // branching requires an additional cycle
+        ++current.cycles;
 
+        current.address += PC;
+
+        // page boundry check
+        if ((current.address & 0x00FF) != (PC & 0xFF00))
+            ++current.cycles;
+
+        PC = current.address;
+    }
 }
 
 void CPU::MOS6502::CLI (void)
