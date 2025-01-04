@@ -58,15 +58,27 @@ namespace CPU
         MOS6502 (read_cb, write_cb);
 
         void print_instruction_set (void) const;
-
         
         std::string get_opcode (const byte instruction) const;
-
 
         void decompile (const word mem_size);
 
         void update (void);
 
+        /* GETTERS FOR DEBUG */
+        word get_PC () const;
+        byte get_AC () const;
+        byte get_X  () const;
+        byte get_Y  () const;
+        byte get_SR () const;
+        byte get_SP () const;
+        
+        const Opcode* const get_current_ins   () const;
+        word get_current_address        () const;
+        byte get_current_data           () const;
+        int get_current_cycles          () const;
+
+        static constexpr std::array<Opcode, 256> const&  get_instruction_set ();
 
     private:
 

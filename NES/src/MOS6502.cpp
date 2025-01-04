@@ -122,7 +122,62 @@ void CPU::MOS6502::decompile (const word mem_size)
 
 void CPU::MOS6502::update (void)
 {
+    // TODO
+}
 
+word CPU::MOS6502::get_PC () const
+{
+    return PC;
+}
+
+byte CPU::MOS6502::get_AC () const
+{
+    return AC;
+}
+
+byte CPU::MOS6502::get_X  () const
+{
+    return X;
+}
+
+byte CPU::MOS6502::get_Y  () const
+{
+    return Y;
+}
+
+byte CPU::MOS6502::get_SR () const
+{
+    return SR;
+}
+
+byte CPU::MOS6502::get_SP () const
+{
+    return SP;
+}
+
+const CPU::MOS6502::Opcode* const CPU::MOS6502::get_current_ins () const
+{
+    return current.ins;
+}
+
+word CPU::MOS6502::get_current_address () const
+{
+    return current.address;
+}
+
+byte CPU::MOS6502::get_current_data () const
+{
+    return current.data;
+}
+
+int CPU::MOS6502::get_current_cycles () const
+{
+    return current.cycles;
+}
+
+constexpr std::array<CPU::MOS6502::Opcode, 256> const&  CPU::MOS6502::get_instruction_set ()
+{
+    return instruction_set;
 }
 
 void CPU::MOS6502::set_flag(const Flag Flag, const bool condition)
