@@ -1,0 +1,4 @@
+[submodule "debugger/imgui"]
+	path = debugger/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking
