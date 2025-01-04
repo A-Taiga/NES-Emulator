@@ -12,7 +12,7 @@ union SDL_Event;
 
 namespace UI
 {
-    class Window 
+    class Window
     {
     public:
 

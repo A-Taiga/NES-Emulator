@@ -6,4 +6,4 @@ add_executable(Emulator
     )
     
 target_include_directories(Emulator PUBLIC ${PROJECT_SOURCE_DIR}/NES/include)
-target_link_libraries(Emulator other_lib)
+target_link_libraries(Emulator debugger)

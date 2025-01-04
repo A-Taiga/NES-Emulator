@@ -1,8 +1,8 @@
 
 
-#include "rom.h"
-#include "MOS6502.h"
-#include "window.h"
+// #include "rom.h"
+// #include "MOS6502.h"
+// #include "window.h"
 
 int main()
 {
@@ -27,13 +27,6 @@ int main()
     // CPU::MOS6502 cpu(read, nullptr);
     // cpu.decompile(rom.size());
 
-    UI::Window window ("Debugger", 1000,1000);
-
-    while (window.is_running())
-    {
-        window.poll([&](auto& event){});
-        window.update();
-    }
 
 
     return 0;

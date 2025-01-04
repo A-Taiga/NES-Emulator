@@ -6,7 +6,6 @@
 #include <iostream>
 #include <source_location>
 
-
 namespace
 {
     inline void print_error(const std::source_location& source = std::source_location::current())
