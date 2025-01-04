@@ -8,7 +8,7 @@
 
 namespace
 {
-    inline void print_error(const std::source_location& source = std::source_location::current())
+    void print_error (const std::source_location& source = std::source_location::current())
     {
         std::clog << "file: "
                 << source.file_name() << '('
@@ -21,31 +21,41 @@ namespace
 }
 
 
-UI::Window::Window(const char* _title, int _width, int _height)
-: title{_title}
-, width{_width}
-, height{_height}
+Debugger::Window::Window(const char* _title, int _width, int _height)
+: title {_title}
+, width {_width}
+, height {_height}
 {
-    const auto result = SDL_Init(SDL_INIT_EVERYTHING);
-    if (result < 0) print_error();
-        
-    window = SDL_CreateWindow(title.c_str(), SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, width, height, 0);
-    if (!window) print_error();
+    const auto result = SDL_Init (SDL_INIT_EVERYTHING);
+    if (result < 0) print_error ();
 
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_SOFTWARE);
+    SDL_GL_SetAttribute (SDL_GL_DOUBLEBUFFER, 1);
+    SDL_GL_SetAttribute (SDL_GL_DEPTH_SIZE, 24);
+    SDL_GL_SetAttribute (SDL_GL_STENCIL_SIZE, 8);
 
-    if(!renderer) print_error();
+    const SDL_WindowFlags window_flags = static_cast <SDL_WindowFlags> (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_ALLOW_HIGHDPI);
+    
+    window = SDL_CreateWindow (_title, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, _width, _height, window_flags);
+    if (!window) print_error ();
+
+    gl_context = SDL_GL_CreateContext (window);
+    if (!gl_context) print_error ();
+    
+    SDL_GL_MakeCurrent (window, gl_context);
+    SDL_GL_SetSwapInterval (1); // Enable vsync
 
     running = true;
+
 }
 
-UI::Window::~Window() 
+Debugger::Window::~Window() 
 {
-    SDL_DestroyWindow(window);
-    SDL_Quit();
+    SDL_GL_DeleteContext (gl_context);
+    SDL_DestroyWindow (window);
+    SDL_Quit ();
 }
 
-void UI::Window::poll(std::function<void(SDL_Event&)> callback) 
+void Debugger::Window::poll(std::function<void(SDL_Event&)> callback) 
 {
     SDL_Event event;
 
@@ -55,19 +65,34 @@ void UI::Window::poll(std::function<void(SDL_Event&)> callback)
 
         if (event.type == SDL_QUIT)
             running = false;
+
+        else if (event.type == SDL_WINDOWEVENT)
+        {
+            if (event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+            {
+                width = event.window.data1;
+                height = event.window.data2;
+            }
+        }
     }
 }
 
-bool UI::Window::is_running() const
+bool Debugger::Window::is_running() const
 {
     return running;
 }
 
-
-void UI::Window::update() const
+void Debugger::Window::update() const
 {
-    SDL_RenderPresent(renderer);
-    SDL_SetRenderDrawColor(renderer, 0,0,0,255);
-    SDL_RenderClear(renderer);
+
 }
 
+SDL_Window* Debugger::Window::get_window () const
+{
+    return window;
+}
+
+void* Debugger::Window::get_gl_context () const
+{
+    return gl_context;
+}

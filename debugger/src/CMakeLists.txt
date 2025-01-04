@@ -11,6 +11,7 @@ add_library(debugger
     ../imgui/backends/imgui_impl_opengl3.cpp
     
     window.cpp
+    debugger.cpp
 )
 
 target_include_directories(debugger PUBLIC 

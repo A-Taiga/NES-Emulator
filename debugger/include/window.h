@@ -5,12 +5,9 @@
 #include <string>
 
 struct SDL_Window;
-struct SDL_Renderer;
-struct SDL_Rect;
-struct SDL_Color;
 union SDL_Event;
 
-namespace UI
+namespace Debugger 
 {
     class Window
     {
@@ -22,12 +19,14 @@ namespace UI
         void poll(std::function<void(SDL_Event&)> callback);
         bool is_running() const;
         void update() const;
+        
+        SDL_Window* get_window () const;
+        void* get_gl_context () const;
 
     private:
 
         SDL_Window* window;
-        SDL_Renderer* renderer;
-
+        void* gl_context;
         std::string title;
 
         int width;
