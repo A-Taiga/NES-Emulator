@@ -2,7 +2,6 @@
 
 // #include "rom.h"
 // #include "MOS6502.h"
-// #include "window.h"
 
 int main()
 {
