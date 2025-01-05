@@ -49,7 +49,7 @@ void Hex_Editor::draw_column_labels ()
         ImGui::SameLine(byte_pos_x);
         ImGui::Text("%02X", i);
     }
-    ImGui::SameLine(((sizes.address_text_width + sizes.glyph_width) - pos.x) + (sizes.byte_text_width +  sizes.glyph_width) * 16.3 + sizes.byte_text_width);
+    ImGui::SameLine(((sizes.address_text_width + sizes.glyph_width) - pos.x) + (sizes.byte_text_width +  sizes.glyph_width) * 16.2 + sizes.byte_text_width);
     ImGui::Text("ASCII");
     ImGui::EndGroup();
     ImGui::Separator();
@@ -58,7 +58,7 @@ void Hex_Editor::draw_column_labels ()
 void Hex_Editor::present (void)
 {
     static constexpr ImGuiInputTextFlags input_text_flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_CharsHexadecimal | ImGuiInputTextFlags_AutoSelectAll | ImGuiInputTextFlags_CallbackAlways;
-    static constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse;
+    static constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_AlwaysAutoResize;
 
     static constexpr ImVec4 scrollbar_backGroundColor {0.2f, 0.2f, 0.2f, 1.0f};
     static constexpr ImVec4 scrollbar_grabber         {0.4f, 0.4f, 0.4f, 1.0f};
@@ -70,7 +70,7 @@ void Hex_Editor::present (void)
 
     calc();
 
-    ImGui::SetNextWindowSize({this->sizes.min_window_width, 0});
+    // ImGui::SetNextWindowSize({this->sizes.min_window_width, 0});
     ImGui::Begin(name.c_str(), nullptr, window_flags);
     draw_column_labels();
     ImGui::PushStyleColor(ImGuiCol_ScrollbarBg, scrollbar_backGroundColor);

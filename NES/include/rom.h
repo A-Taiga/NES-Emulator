@@ -19,8 +19,8 @@ public:
 
     bool cpu_read (std::uint16_t address, std::uint8_t& data);
 
-    const std::vector<std::uint8_t>& get_prg_memory() const;
-    const std::vector<std::uint8_t>& get_chr_memory() const;
+    std::vector<std::uint8_t>& get_prg_memory();
+    std::vector<std::uint8_t>& get_chr_memory();
 
 
 private:

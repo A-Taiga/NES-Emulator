@@ -11,11 +11,6 @@
 
 struct ImGuiInputTextCallbackData;
 
-struct MOS6502_Data
-{
-    
-};
-
 
 class Hex_Editor
 {

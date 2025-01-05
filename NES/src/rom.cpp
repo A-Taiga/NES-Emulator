@@ -112,13 +112,12 @@ NES_ROM::NES_ROM(const char* file_name)
     if(header.flags_6 & 0x04)
         file.seekg(512, std::ios::cur);
 
-
     // if(((header.flags_7 >> 2) & 0x3) == 2)
     // {}
 
 
     file.read(reinterpret_cast<char*>(prg_memory.data()), prg_memory.size());
-    file.read(reinterpret_cast<char*>(chr_memory.data()), prg_memory.size());
+    file.read(reinterpret_cast<char*>(chr_memory.data()), chr_memory.size());
 
     switch (mapper_id)
     {
@@ -149,12 +148,12 @@ bool NES_ROM::cpu_read (std::uint16_t address, std::uint8_t& data)
     return false;
 }
 
-const std::vector<std::uint8_t>& NES_ROM::get_prg_memory() const
+std::vector<std::uint8_t>& NES_ROM::get_prg_memory()
 {
     return prg_memory;
 }
 
-const std::vector<std::uint8_t>& NES_ROM::get_chr_memory() const
+std::vector<std::uint8_t>& NES_ROM::get_chr_memory()
 {
     return chr_memory;
 }

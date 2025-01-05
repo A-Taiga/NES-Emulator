@@ -8,177 +8,25 @@ CPU::MOS6502::MOS6502 (read_cb read, write_cb write)
 , write{write}
 {}
 
-void CPU::MOS6502::print_instruction_set (void) const
-{
-    std::cout << "   ";
-    for(int i = 0; i < 16; ++i)
-        std::cout << std::format(" {:X} ", i) << " ";
-
-    int v = 0;
-    for (auto i = 0; i < 256; ++i)
-    {
-        const auto& m = instruction_set[i].mnemonic;
-
-                
-        if(i % 16 == 0)
-        {
-            std::cout << '\n' << std::format("{:X}  ", v);
-            ++v;
-        }
-
-        if(m == "???")
-            std::cout << "___" << " ";
-        else
-            std::cout << m << " ";
-    }
-}
-
-std::string CPU::MOS6502::get_opcode (const byte instruction) const
-{
-    return instruction_set[instruction].mnemonic;
-}
-
-void CPU::MOS6502::decompile (const word mem_size) 
-{
-    word index = 0;
-    while (index < mem_size)
-    {
-        const Opcode& current = instruction_set[read(index)];
-
-        if (current.mode == &_::IMP) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:>9}", index, read(index), current.mnemonic);
-            index += 1;
-        }
-        else if (current.mode == &_::IMM) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} #${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
-            index += 2;
-        }
-        else if (current.mode == &_::ABS) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:} ${:04X} ", index, read(index), read(index+1), read(index+2), current.mnemonic, (read(index+2) << 8) | read(index+1));
-            index += 3;
-        }
-        else if (current.mode == &_::ZPG) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
-            index += 2;
-        }
-        else if (current.mode == &_::ABX) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:} ${:04X}, X", index, read(index), read(index+1), read(index+2), current.mnemonic, (read(index+2) << 8) | read(index+1));
-            index += 3;
-        }
-        else if (current.mode == &_::ABY) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:}", index, read(index), read(index+1), read(index+2), current.mnemonic);
-            index += 3;
-        }
-        else if (current.mode == &_::ZPX) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:>6} ${:02X}", index, read(index+1), current.mnemonic, read(index+1));
-            index += 2;
-        }
-        else if (current.mode == &_::ZPY) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6}", index, read(index), read(index+1), current.mnemonic);
-            index += 2;
-        }
-        else if (current.mode == &_::IND) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:02X} {:}", index, read(index), read(index+1), read(index+2), current.mnemonic);
-            index += 3;
-        }
-        else if (current.mode == &_::XIZ) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
-            index += 2;
-        }
-        else if (current.mode == &_::YIZ) 
-        { 
-            std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:02X}", index, read(index), read(index+1), current.mnemonic, read(index+1));
-            index += 2;
-        }
-        else if (current.mode == &_::REL)
-        {
-            if (std::strcmp(current.mnemonic.c_str(), "CPX"))
-            {
-                word result = read (index+1);
-                if (result & 0x80) 
-                    result |= 0xFF00;
-                word addr = index+2 + result;
-                std::cout << std::format ("{:04X}: {:02X} {:02X} {:>6} ${:04X}", index, read(index), read(index+1), current.mnemonic, addr); 
-                index += 2;
-            }
-        }
-        else {
-            std::cout << std::format("{:04X}", index);
-            index += 1;
-        }
-        std::cout << '\n';
-    }
-}
-
 void CPU::MOS6502::update (void)
 {
     // TODO
 }
 
-word CPU::MOS6502::get_PC () const
-{
-    return PC;
-}
+/* GETTERS */
+word CPU::MOS6502::get_PC              () const {return PC;}
+byte CPU::MOS6502::get_AC              () const {return AC;}
+byte CPU::MOS6502::get_X               () const {return X;}
+byte CPU::MOS6502::get_Y               () const {return Y;}
+byte CPU::MOS6502::get_SR              () const {return SR;}
+byte CPU::MOS6502::get_SP              () const {return SP;}
+word CPU::MOS6502::get_current_address () const {return current.address;}
+byte CPU::MOS6502::get_current_data    () const {return current.data;}
+int CPU::MOS6502::get_current_cycles   () const {return current.cycles;}
 
-byte CPU::MOS6502::get_AC () const
-{
-    return AC;
-}
+const _6502::Instruction& CPU::MOS6502::get_instruction (std::size_t index) {return instruction_table[index].ins;}
 
-byte CPU::MOS6502::get_X  () const
-{
-    return X;
-}
-
-byte CPU::MOS6502::get_Y  () const
-{
-    return Y;
-}
-
-byte CPU::MOS6502::get_SR () const
-{
-    return SR;
-}
-
-byte CPU::MOS6502::get_SP () const
-{
-    return SP;
-}
-
-const CPU::MOS6502::Opcode* const CPU::MOS6502::get_current_ins () const
-{
-    return current.ins;
-}
-
-word CPU::MOS6502::get_current_address () const
-{
-    return current.address;
-}
-
-byte CPU::MOS6502::get_current_data () const
-{
-    return current.data;
-}
-
-int CPU::MOS6502::get_current_cycles () const
-{
-    return current.cycles;
-}
-
-constexpr std::array<CPU::MOS6502::Opcode, 256> const&  CPU::MOS6502::get_instruction_set ()
-{
-    return instruction_set;
-}
+const CPU::MOS6502::Opcode* const CPU::MOS6502::get_current_ins () const {return current.ins;}
 
 void CPU::MOS6502::set_flag(const Flag Flag, const bool condition)
 {
@@ -207,7 +55,6 @@ byte CPU::MOS6502::stack_pop (void)
     some of these functions will return an extra cycle 
     if a page boundry was crossed
 */
-
 
 // accumulator
 int CPU::MOS6502::ACC (void)

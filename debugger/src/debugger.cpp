@@ -1,11 +1,12 @@
 #include "debugger.h"
-
+#include "MOS6502.h"
 #include "hex_editor.h"
-
+#include <format>
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
+#include "mos6502_instructions.h"
 #include <SDL.h>
 #include <cstdint>
 #if defined(IMGUI_IMPL_OPENGL_ES2)
@@ -15,8 +16,49 @@
 #endif
 
 
-Debugger::GUI::GUI (const char* title, const int width, const int height)
+namespace
+{
+    void print_instruction_set (const CPU::MOS6502& cpu)
+    {
+
+        const auto& padding_x = ImGui::GetStyle().FramePadding.x * 2;
+        const auto& padding_y = ImGui::GetStyle().FramePadding.y * 2;
+
+        ImGui::Begin ("Instruction Set");
+        
+        for (auto i = 0; i < 256; ++i)
+        {
+
+            const auto& ins = cpu.get_instruction(i);
+
+            if (i % 16 != 0)
+                ImGui::SameLine();
+            
+            if (ins.instruction == _6502::Inst::XXX)
+            {
+                const auto size = ImGui::CalcTextSize(ins.mnemonic);
+                ImGui::Dummy({size.x + padding_x, size.y + padding_y});
+                continue;
+            }
+            ImGui::PushID(i);
+            ImGui::Button(ins.mnemonic);
+            if(ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+            {
+                ImGui::BeginTooltip();
+                ImGui::Text("%s", ins.instruction_info);
+                ImGui::Text("%s", ins.mode_info);
+                ImGui::EndTooltip();
+            }
+            ImGui::PopID();
+        }
+
+        ImGui::End();
+    }
+}
+
+Debugger::GUI::GUI (const char* title, const int width, const int height, NES_Data data)
 : window {title, width, height}
+, data {data}
 {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -43,6 +85,9 @@ void Debugger::GUI::run ()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
+    Hex_Editor prg_memory {"prg memory", data.pgr_memory.size(), 0, data.pgr_memory.size(), sizeof(std::uint8_t), data.pgr_memory.data()};
+    Hex_Editor chr_memory {"chr memory", data.chr_memory.size(), 0, data.chr_memory.size(), sizeof(std::uint8_t), data.chr_memory.data()};
+
     while (window.is_running ())
     {
         window.poll ([&] (auto& event) {
@@ -61,6 +106,22 @@ void Debugger::GUI::run ()
         ImGui::NewFrame();
         ImGui::DockSpaceOverViewport();
         
+        prg_memory.present();
+        chr_memory.present();
+
+        ImGui::Begin("Test");
+        const std::uint8_t SR = data.cpu.get_SR();
+        ImGui::Text("C: %d", static_cast <int> (SR >> 0) & 1);
+        ImGui::Text("Z: %d", static_cast <int> (SR >> 1) & 1);
+        ImGui::Text("I: %d", static_cast <int> (SR >> 2) & 1);
+        ImGui::Text("D: %d", static_cast <int> (SR >> 3) & 1);
+        ImGui::Text("B: %d", static_cast <int> (SR >> 4) & 1);
+        ImGui::Text("_: %d", static_cast <int> (SR >> 5) & 1);
+        ImGui::Text("V: %d", static_cast <int> (SR >> 6) & 1);
+        ImGui::Text("N: %d", static_cast <int> (SR >> 7) & 1);
+        ImGui::End();
+
+        print_instruction_set(data.cpu);
 
         // Rendering
         ImGui::Render();

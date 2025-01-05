@@ -7,3 +7,4 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_subdirectory(NES/src)
 add_subdirectory(debugger/src)
+add_subdirectory(mos6502/src)
