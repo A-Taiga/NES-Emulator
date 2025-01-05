@@ -4,7 +4,6 @@
 #include "window.h"
 
 
-struct ImGuiIO;
 
 namespace Debugger
 {
@@ -13,12 +12,10 @@ namespace Debugger
     public:
         GUI (const char* title, const int width, const int height);
 
-
         void run ();
 
     private:
         Window window;
-        ImGuiIO& io;
     };
 }
 

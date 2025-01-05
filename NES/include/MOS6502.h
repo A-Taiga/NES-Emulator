@@ -74,9 +74,9 @@ namespace CPU
         byte get_SP () const;
         
         const Opcode* const get_current_ins   () const;
-        word get_current_address        () const;
-        byte get_current_data           () const;
-        int get_current_cycles          () const;
+        word get_current_address              () const;
+        byte get_current_data                 () const;
+        int get_current_cycles                () const;
 
         static constexpr std::array<Opcode, 256> const&  get_instruction_set ();
 

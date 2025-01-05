@@ -22,12 +22,16 @@ namespace Debugger
         
         SDL_Window* get_window () const;
         void* get_gl_context () const;
+        std::string get_glsl_version () const;
 
     private:
 
         SDL_Window* window;
+
         void* gl_context;
+
         std::string title;
+        std::string glsl_version;
 
         int width;
         int height;

@@ -4,9 +4,13 @@
 
 int main()
 {
+
+
+    
     Debugger::GUI debugger {"Test", 1920, 1080};
 
-    debugger.run();
+
+    debugger.run ();
 
     return 0;
 }

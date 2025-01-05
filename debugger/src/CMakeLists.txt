@@ -12,6 +12,7 @@ add_library(debugger
     
     window.cpp
     debugger.cpp
+    hex_editor.cpp
 )
 
 target_include_directories(debugger PUBLIC 
