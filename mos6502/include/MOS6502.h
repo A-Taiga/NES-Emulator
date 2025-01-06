@@ -68,7 +68,7 @@ namespace CPU
         byte get_current_data    () const;
         int get_current_cycles   () const;
 
-        const Opcode* const get_current_ins () const;
+        const Opcode*  get_current_ins () const;
         
         static const _6502::Instruction& get_instruction (const word index);
 
@@ -77,8 +77,8 @@ namespace CPU
         static constexpr word stk_begin = 0x0100;
 
         /* READ WRITE CALLBACKS */
-        write_cb write;
         read_cb  read;
+        write_cb write;
 
         /* REGISTERS */
         word PC;    // program counter

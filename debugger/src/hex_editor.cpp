@@ -66,8 +66,8 @@ void Hex_Editor::present (void)
     static constexpr ImVec4 scrollbar_grabberActive   {0.8f, 0.0f, 0.0f, 1.0f};
     static constexpr ImVec4 white                     {1,1,1,1};
 
-    static float scrollY = 0.0f;
-
+    [[maybe_unused]] static float scrollY = 0.0f;
+    
     calc();
 
     // ImGui::SetNextWindowSize({this->sizes.min_window_width, 0});

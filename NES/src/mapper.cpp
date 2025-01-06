@@ -2,7 +2,7 @@
 
 Mapper::Mapper (u8 _prg_banks, u8 _chr_banks)
 : prg_banks {_prg_banks}
-, chr_banks {_prg_banks}
+, chr_banks {_chr_banks}
 {}
 
 Mapper::~Mapper()
@@ -15,7 +15,7 @@ Mapper_000::Mapper_000 (const u8 _prg_banks, const u8 _chr_banks)
 Mapper_000::~Mapper_000 ()
 {}
 
-bool Mapper_000::cpu_read (const u16 address, u32& mapped_address, u8& data)
+bool Mapper_000::cpu_read (const u16 address, u32& mapped_address, [[maybe_unused]] u8& data)
 {
     /*
         16kb----------------------------
@@ -37,7 +37,11 @@ bool Mapper_000::cpu_read (const u16 address, u32& mapped_address, u8& data)
     return true;
 }
 
+
 bool Mapper_000::cpu_write (u16 address, u32& mapped_address, const u8 data)
 {
+    (void) address;
+    (void) mapped_address;
+    (void) data;
     return false;
 }

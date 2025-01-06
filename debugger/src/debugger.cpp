@@ -146,15 +146,12 @@ void Debugger::GUI::run ()
 
     io.Fonts->AddFontFromFileTTF("/home/anthony/Workspace/cpp/6502/debugger/imgui/misc/fonts/Cousine-Regular.ttf", 25);
 
-    bool open = true;
 
     ImGui::StyleColorsDark();
 
     ImGui_ImplSDL2_InitForOpenGL(window.get_window (), window.get_gl_context ());
     ImGui_ImplOpenGL3_Init(window.get_glsl_version ().c_str());
 
-    bool show_demo_window = true;
-    bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     Hex_Editor prg_memory {"prg memory", data.prg_memory.size(), 0, data.prg_memory.size(), sizeof(std::uint8_t), data.prg_memory.data()};

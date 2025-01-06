@@ -24,7 +24,7 @@ int CPU::MOS6502::get_current_cycles   () const {return current.cycles;}
 
 const _6502::Instruction& CPU::MOS6502::get_instruction (const word index) {return instruction_table[index].ins;}
 
-const CPU::MOS6502::Opcode* const CPU::MOS6502::get_current_ins () const {return current.ins;}
+const CPU::MOS6502::Opcode* CPU::MOS6502::get_current_ins () const {return current.ins;}
 
 void CPU::MOS6502::set_flag(const Flag Flag, const bool condition)
 {
@@ -684,13 +684,14 @@ void CPU::MOS6502::CPX (void)
 }
 
 // subtract with carry
+// TODO ~(result < 0x00) look at the nes docs
 void CPU::MOS6502::SBC (void)
 {
     current.data = read (current.address);
 
     const word result = AC + ~current.data + (static_cast <byte> (Flag::C) & SR);
 
-    set_flag (Flag::C, ~(result < 0x00));
+    set_flag (Flag::C, !(result < 0x00));
     set_flag (Flag::Z, result == 0x00);
     set_flag (Flag::V, (result ^ AC) & (result ^ ~current.data) & 0x80);
     set_flag (Flag::N, result & 0x80);

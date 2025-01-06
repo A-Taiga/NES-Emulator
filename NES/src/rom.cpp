@@ -142,9 +142,10 @@ NES_ROM::NES_ROM(const char* file_name)
 
 bool NES_ROM::cpu_read (std::uint16_t address, std::uint8_t& data)
 {
-
-    std::uint32_t mapped_address {};
-    std::vector<std::uint8_t> prg_memory;
+    (void) address;
+    (void) data;
+    // std::uint32_t mapped_address {};
+    // std::vector<std::uint8_t> prg_memory;
     return false;
 }
 
