@@ -1,8 +1,6 @@
 #ifndef MOS6502_INSTRUCTIONS
 #define MOS6502_INSTRUCTIONS
 
-#include <array>
-
 namespace _6502
 {
 

@@ -1,7 +1,6 @@
 #include "debugger.h"
 #include "MOS6502.h"
 #include "hex_editor.h"
-#include <format>
 #include <cstring>
 
 #include "imgui.h"

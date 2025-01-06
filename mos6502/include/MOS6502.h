@@ -2,7 +2,6 @@
 #define MOS6502_H
 
 #include "utility.h"
-#include <string>
 #include <array>
 #include <functional>
 #include "mos6502_instructions.h"

@@ -1,6 +1,4 @@
 #include "MOS6502.h"
-#include <iostream>
-#include <format>
 #include <cstring>
 
 CPU::MOS6502::MOS6502 (read_cb read, write_cb write)
