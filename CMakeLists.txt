@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Werror")
 
+
+add_subdirectory(src)
 add_subdirectory(NES/src)
 add_subdirectory(debugger/src)
-add_subdirectory(mos6502/src)

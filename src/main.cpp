@@ -5,7 +5,7 @@
 
 int main()
 {
-    NES_ROM rom{"/home/anthony/Workspace/cpp/6502/NES/roms/Super_mario_brothers.nes"};
+    NES_ROM rom{"/home/anthony/Workspace/cpp/6502/roms/Super_mario_brothers.nes"};
 
     CPU::MOS6502 cpu {nullptr, nullptr};
 

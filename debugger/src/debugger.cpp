@@ -15,6 +15,7 @@
 #include <SDL_opengl.h>
 #endif
 
+
 namespace
 {
     void print_instruction_set (const CPU::MOS6502& cpu)
@@ -57,14 +58,13 @@ namespace
     void decompiler (const Debugger::NES_Data& data)
     {
         std::uint16_t index = 0;
-
         const auto read = [&data](auto index){ return data.prg_memory[index]; };
         ImGui::Begin ("Code");
 
         while (index < data.chr_memory.size())
         {
             const auto& ins_info = data.cpu.get_instruction(data.prg_memory[index]);
-
+            
             switch (ins_info.mode)
             {
                 case CPU::_6502::Mode::ABS:

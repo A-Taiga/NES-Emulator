@@ -20,7 +20,6 @@ namespace
     }
 }
 
-
 Debugger::Window::Window(const char* _title, int _width, int _height)
 : title {_title}
 , width {_width}

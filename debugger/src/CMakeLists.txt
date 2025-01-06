@@ -26,4 +26,4 @@ target_include_directories(debugger PUBLIC
 
 target_link_libraries(debugger PUBLIC SDL2main SDL2)
 target_link_libraries(debugger PUBLIC GL)
-target_link_libraries(debugger PUBLIC mos6502)
+target_link_libraries(debugger PUBLIC nes)
