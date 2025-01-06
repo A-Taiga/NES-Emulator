@@ -24,7 +24,7 @@ word CPU::MOS6502::get_current_address () const {return current.address;}
 byte CPU::MOS6502::get_current_data    () const {return current.data;}
 int CPU::MOS6502::get_current_cycles   () const {return current.cycles;}
 
-const _6502::Instruction& CPU::MOS6502::get_instruction (std::size_t index) {return instruction_table[index].ins;}
+const _6502::Instruction& CPU::MOS6502::get_instruction (const word index) {return instruction_table[index].ins;}
 
 const CPU::MOS6502::Opcode* const CPU::MOS6502::get_current_ins () const {return current.ins;}
 
