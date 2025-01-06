@@ -11,19 +11,19 @@ namespace Debugger
 {
     struct NES_Data
     {
-        NES_Data (std::vector<std::uint8_t>& pgr, std::vector<std::uint8_t>& chr, CPU::MOS6502& _cpu)
-        : pgr_memory {pgr}
+        NES_Data (std::vector<std::uint8_t>& prg, std::vector<std::uint8_t>& chr, CPU::MOS6502& _cpu)
+        : prg_memory {prg}
         , chr_memory {chr}
         , cpu {_cpu}
         {}
 
         NES_Data (NES_Data& other)
-        : pgr_memory {other.pgr_memory}
+        : prg_memory {other.prg_memory}
         , chr_memory {other.chr_memory}
         , cpu {other.cpu}
         {}
 
-        std::vector<std::uint8_t>& pgr_memory;
+        std::vector<std::uint8_t>& prg_memory;
         std::vector<std::uint8_t>& chr_memory;
         CPU::MOS6502& cpu;
     };

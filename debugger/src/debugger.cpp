@@ -59,12 +59,12 @@ namespace
     {
         std::uint16_t index = 0;
 
-        const auto read = [&data](auto index){ return data.pgr_memory[index]; };
+        const auto read = [&data](auto index){ return data.prg_memory[index]; };
         ImGui::Begin ("Code");
 
         while (index < data.chr_memory.size())
         {
-            const auto& ins_info = data.cpu.get_instruction(data.pgr_memory[index]);
+            const auto& ins_info = data.cpu.get_instruction(data.prg_memory[index]);
 
             switch (ins_info.mode)
             {
@@ -158,7 +158,7 @@ void Debugger::GUI::run ()
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
-    Hex_Editor prg_memory {"prg memory", data.pgr_memory.size(), 0, data.pgr_memory.size(), sizeof(std::uint8_t), data.pgr_memory.data()};
+    Hex_Editor prg_memory {"prg memory", data.prg_memory.size(), 0, data.prg_memory.size(), sizeof(std::uint8_t), data.prg_memory.data()};
     Hex_Editor chr_memory {"chr memory", data.chr_memory.size(), 0, data.chr_memory.size(), sizeof(std::uint8_t), data.chr_memory.data()};
 
     while (window.is_running ())
@@ -193,7 +193,6 @@ void Debugger::GUI::run ()
         ImGui::Text("V: %d", static_cast <int> (SR >> 6) & 1);
         ImGui::Text("N: %d", static_cast <int> (SR >> 7) & 1);
         ImGui::End();
-
         print_instruction_set(data.cpu);
 
         decompiler(data);
