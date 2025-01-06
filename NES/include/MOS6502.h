@@ -21,7 +21,6 @@ Y	Y register	(8 bit)
 SR	status register [NV-BDIZC]	(8 bit)
 SP	stack pointer	(8 bit)
 
-
 */
 
 namespace CPU

@@ -17,24 +17,27 @@ public:
 
     std::uint32_t size() {return prg_memory.size();}
 
-    bool cpu_read (std::uint16_t address, std::uint8_t& data);
+    bool cpu_read (u16 address, u8& data);
 
-    std::vector<std::uint8_t>& get_prg_memory();
-    std::vector<std::uint8_t>& get_chr_memory();
+    u8 get_prg_bank_n () const;
+    u8 get_chr_bank_n () const;
+
+    std::vector<u8>& get_prg_memory ();
+    std::vector<u8>& get_chr_memory ();
 
 
 private:
 
-    std::uint8_t prg_bank_n;
-    std::uint8_t chr_bank_n;
-    std::uint8_t mapper_id;
+    u8 prg_bank_n;
+    u8 chr_bank_n;
+    u8 mapper_id;
 
     std::shared_ptr <Mapper> mapper;
 
     int mirror;
 
-    std::vector<std::uint8_t> prg_memory;
-    std::vector<std::uint8_t> chr_memory;
+    std::vector<u8> prg_memory;
+    std::vector<u8> chr_memory;
 
 };
 

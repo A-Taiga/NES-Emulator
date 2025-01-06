@@ -3,8 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include "mapper.h"
-
-// #define DEBUG_ROM
+#define DEBUG_ROM
 
 
 /*
@@ -59,7 +58,6 @@ FLAGS 10
   |+----- PRG RAM ($6000-$7FFF) (0: present; 1: not present)
   +------ 0: Board has no bus conflicts; 1: Board has bus conflicts
 
-
 */
 
 #define VERTICAL   = 0
@@ -67,19 +65,20 @@ FLAGS 10
 
 namespace
 {
-
+    #pragma pack (push, 1)
     struct NES_ROM_Header
     {
-        char         name[4];
-        std::uint8_t prg_size;
-        std::uint8_t chr_size;
-        std::uint8_t flags_6;
-        std::uint8_t flags_7;
-        std::uint8_t flags_8;
-        std::uint8_t flags_9;
-        std::uint8_t flags_10;
-        char         unused[5];
+        char name[4];
+        u8   prg_size;
+        u8   chr_size;
+        u8   flags_6;
+        u8   flags_7;
+        u8   flags_8;
+        u8   flags_9;
+        u8   flags_10;
+        char unused[5];
     };
+    #pragma pack (pop)
 }
 
 NES_ROM::NES_ROM(const char* file_name)
@@ -121,7 +120,7 @@ NES_ROM::NES_ROM(const char* file_name)
 
     switch (mapper_id)
     {
-        case 0: mapper = std::make_shared<Mapper_000>(prg_bank_n, chr_bank_n);
+        case 0: mapper = std::make_shared<Mapper_000> (prg_bank_n, chr_bank_n);
         break;
     }
 
@@ -140,24 +139,22 @@ NES_ROM::NES_ROM(const char* file_name)
 
 }
 
-bool NES_ROM::cpu_read (std::uint16_t address, std::uint8_t& data)
+bool NES_ROM::cpu_read (u16 address, u8& data)
 {
     (void) address;
     (void) data;
-    // std::uint32_t mapped_address {};
-    // std::vector<std::uint8_t> prg_memory;
-    return false;
+    std::uint32_t mapped_address {};
+    // std::vector<u8> prg_memory;
+    return mapper->cpu_read(address, mapped_address, data);
+    // return false;
 }
 
-std::vector<std::uint8_t>& NES_ROM::get_prg_memory()
-{
-    return prg_memory;
-}
+/* GETTERS */
+u8 NES_ROM::get_prg_bank_n () const {return prg_bank_n;}
+u8 NES_ROM::get_chr_bank_n () const {return chr_bank_n;}
 
-std::vector<std::uint8_t>& NES_ROM::get_chr_memory()
-{
-    return chr_memory;
-}
+std::vector<u8>& NES_ROM::get_prg_memory () {return prg_memory;}
+std::vector<u8>& NES_ROM::get_chr_memory () {return chr_memory;}
 
 
 

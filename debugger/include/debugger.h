@@ -7,6 +7,7 @@
 
 namespace CPU {class MOS6502;}
 
+
 namespace Debugger
 {
     struct NES_Data
@@ -23,9 +24,12 @@ namespace Debugger
         , cpu {other.cpu}
         {}
 
+        static constexpr u16 address_offset = 0x8000;
+
         std::vector<std::uint8_t>& prg_memory;
         std::vector<std::uint8_t>& chr_memory;
         CPU::MOS6502& cpu;
+
     };
 
     class GUI

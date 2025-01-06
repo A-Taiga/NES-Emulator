@@ -18,6 +18,8 @@ Mapper_000::~Mapper_000 ()
 bool Mapper_000::cpu_read (const u16 address, u32& mapped_address, [[maybe_unused]] u8& data)
 {
     /*
+        EXAMPLE
+        
         16kb----------------------------
         program address      rom address
         $8000 - $BFFF   -->  $0000 - $3FFF

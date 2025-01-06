@@ -55,49 +55,74 @@ namespace
         ImGui::End();
     }
 
+    [[maybe_unused]]
+    void ins_info_button (u8 instruction, u16 index, const CPU::MOS6502& cpu) 
+    {
+        const auto& ins = cpu.get_instruction(instruction);
+        ImGui::SameLine(ImGui::CalcTextSize("F").x * 27);
+        ImGui::PushID(index);
+        ImGui::Button(ins.mnemonic);
+        if(ImGui::IsItemHovered(ImGuiHoveredFlags_ForTooltip))
+        {
+            ImGui::BeginTooltip();
+            ImGui::Text("%s", ins.instruction_info);
+            ImGui::Text("%s", ins.mode_info);
+            ImGui::EndTooltip();
+        }
+        ImGui::PopID();
+    }
+
     void decompiler (const Debugger::NES_Data& data)
     {
         std::uint16_t index = 0;
         const auto read = [&data](auto index){ return data.prg_memory[index]; };
         ImGui::Begin ("Code");
-
-        while (index < data.chr_memory.size())
+        
+        while (index < data.prg_memory.size())
         {
             const auto& ins_info = data.cpu.get_instruction(data.prg_memory[index]);
             
             switch (ins_info.mode)
             {
                 case CPU::_6502::Mode::ABS:
-                    ImGui::Text ("%04X: %02X %02X %02X %s $%04X", index, read(index), read(index+1), read(index+1), ins_info.mnemonic, (read(index+1) << 8) | read(index+1));
+                    ImGui::Text ("%04X: %02X %02X %02X %s $%04X", data.address_offset + index, read(index), read(index+1), read(index+2), ins_info.mnemonic, (read(index+2) << 8) | read(index+1));
+                    ins_info_button (read(index), index, data.cpu);
                     index += 3;
                 break;
                 case CPU::_6502::Mode::ABX:
-                    ImGui::Text ("%04X: %02X %02X %02X %s $%04X, X", index, read(index), read(index+1), read(index+2), ins_info.mnemonic, (read(index+2) << 8) | read(index+1));
+                    ImGui::Text ("%04X: %02X %02X %02X %s $%04X, X", data.address_offset + index, read(index), read(index+1), read(index+2), ins_info.mnemonic, (read(index+2) << 8) | read(index+1));
+                    ins_info_button (read(index), index, data.cpu);
                     index += 3;
                 break;
                 case CPU::_6502::Mode::ABY:
-                    ImGui::Text ("%04X: %02X %02X %02X %s", index, read(index), read(index+1), read(index+2), ins_info.mnemonic);
+                    ImGui::Text ("%04X: %02X %02X %02X %s", data.address_offset + index, read(index), read(index+1), read(index+2), ins_info.mnemonic);
+                    ins_info_button (read(index), index, data.cpu);
                     index += 3;
                 break;
                 case CPU::_6502::Mode::IMM:
-                    ImGui::Text ("%04X: %02X %02X %6s #$%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    ImGui::Text ("%04X: %02X %02X %6s #$%02X", data.address_offset + index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    ins_info_button (read(index), index, data.cpu);
                     index += 2;
                 break;
                 case CPU::_6502::Mode::ACC:
                 case CPU::_6502::Mode::IMP:
-                    ImGui::Text ("%04X: %02X %9s", index, read(index), ins_info.mnemonic);
+                    ImGui::Text ("%04X: %02X %9s",data.address_offset +  index, read(index), ins_info.mnemonic);
+                    ins_info_button (read(index), index, data.cpu);
                     index += 1;
                 break;
                 case CPU::_6502::Mode::IND:
-                    ImGui::Text ("%04X: %02X %02X %02X %s", index, read(index), read(index+1), read(index+2), ins_info.mnemonic);
+                    ImGui::Text ("%04X: %02X %02X %02X %s", data.address_offset + index, read(index), read(index+1), read(index+2), ins_info.mnemonic);
+                    ins_info_button (read(index), index, data.cpu);
                     index += 3;
                 break;
                 case CPU::_6502::Mode::XIZ:
-                    ImGui::Text ("%04X: %02X %02X %6s $%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    ImGui::Text ("%04X: %02X %02X %6s $%02X", data.address_offset + index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    ins_info_button (read(index), index, data.cpu);
                     index+= 2;
                 break;
                 case CPU::_6502::Mode::YIZ:
-                    ImGui::Text ("%04X: %02X %02X %6s $%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    ImGui::Text ("%04X: %02X %02X %6s $%02X", data.address_offset + index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    ins_info_button (read(index), index, data.cpu);
                     index += 2;
                 break;
                 case CPU::_6502::Mode::REL:
@@ -106,24 +131,29 @@ namespace
                         std::uint16_t result = read (index+1);
                         if (result & 0x80) result |= 0xFF00;
                         std::uint16_t addr = index+2 + result;
-                        ImGui::Text ("%04X: %02X %02X %6s $%04X", index, read(index), read(index+1), ins_info.mnemonic, addr); 
+                        ImGui::Text ("%04X: %02X %02X %6s $%04X", data.address_offset + index, read(index), read(index+1), ins_info.mnemonic, addr); 
+                        ins_info_button (read(index), index, data.cpu);
                         index += 2;
                     }
                 break;
                 case CPU::_6502::Mode::ZPG:
-                    ImGui::Text ("%04X: %02X %02X %6s %02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    ImGui::Text ("%04X: %02X %02X %6s %02X", data.address_offset + index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    ins_info_button (read(index), index, data.cpu);
                     index += 2;
                 break;
                 case CPU::_6502::Mode::ZPX:
-                    ImGui::Text ("%04X: %02X %02X %6s", index, read(index), read(index+1), ins_info.mnemonic);
+                    ImGui::Text ("%04X: %02X %02X %6s", data.address_offset + index, read(index), read(index+1), ins_info.mnemonic);
+                    ins_info_button (read(index), index, data.cpu);
                     index += 2;
                 break;
                 case CPU::_6502::Mode::ZPY:
-                    ImGui::Text ("%04X: %02X %02X %6s", index, read(index), read(index+1), ins_info.mnemonic);
+                    ImGui::Text ("%04X: %02X %02X %6s", data.address_offset + index, read(index), read(index+1), ins_info.mnemonic);
+                    ins_info_button (read(index), index, data.cpu);
                     index += 2;
                 break;
             }
         }
+
         ImGui::End();
     }
 }
