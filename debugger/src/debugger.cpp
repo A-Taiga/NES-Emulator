@@ -33,7 +33,7 @@ namespace
             if (i % 16 != 0)
                 ImGui::SameLine();
             
-            if (ins.instruction == _6502::Inst::XXX)
+            if (ins.instruction == CPU::_6502::Opcode::XXX)
             {
                 const auto size = ImGui::CalcTextSize(ins.mnemonic);
                 ImGui::Dummy({size.x + padding_x, size.y + padding_y});
@@ -67,40 +67,40 @@ namespace
 
             switch (ins_info.mode)
             {
-                case _6502::Mode::ABS:
+                case CPU::_6502::Mode::ABS:
                     ImGui::Text ("%04X: %02X %02X %02X %s $%04X", index, read(index), read(index+1), read(index+1), ins_info.mnemonic, (read(index+1) << 8) | read(index+1));
                     index += 3;
                 break;
-                case _6502::Mode::ABX:
+                case CPU::_6502::Mode::ABX:
                     ImGui::Text ("%04X: %02X %02X %02X %s $%04X, X", index, read(index), read(index+1), read(index+2), ins_info.mnemonic, (read(index+2) << 8) | read(index+1));
                     index += 3;
                 break;
-                case _6502::Mode::ABY:
+                case CPU::_6502::Mode::ABY:
                     ImGui::Text ("%04X: %02X %02X %02X %s", index, read(index), read(index+1), read(index+2), ins_info.mnemonic);
                     index += 3;
                 break;
-                case _6502::Mode::IMM:
+                case CPU::_6502::Mode::IMM:
                     ImGui::Text ("%04X: %02X %02X %6s #$%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
                     index += 2;
                 break;
-                case _6502::Mode::ACC:
-                case _6502::Mode::IMP:
+                case CPU::_6502::Mode::ACC:
+                case CPU::_6502::Mode::IMP:
                     ImGui::Text ("%04X: %02X %9s", index, read(index), ins_info.mnemonic);
                     index += 1;
                 break;
-                case _6502::Mode::IND:
+                case CPU::_6502::Mode::IND:
                     ImGui::Text ("%04X: %02X %02X %02X %s", index, read(index), read(index+1), read(index+2), ins_info.mnemonic);
                     index += 3;
                 break;
-                case _6502::Mode::XIZ:
+                case CPU::_6502::Mode::XIZ:
                     ImGui::Text ("%04X: %02X %02X %6s $%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
                     index+= 2;
                 break;
-                case _6502::Mode::YIZ:
+                case CPU::_6502::Mode::YIZ:
                     ImGui::Text ("%04X: %02X %02X %6s $%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
                     index += 2;
                 break;
-                case _6502::Mode::REL:
+                case CPU::_6502::Mode::REL:
                     if (std::strcmp(ins_info.mnemonic, "CPX"))
                     {
                         std::uint16_t result = read (index+1);
@@ -110,15 +110,15 @@ namespace
                         index += 2;
                     }
                 break;
-                case _6502::Mode::ZPG:
+                case CPU::_6502::Mode::ZPG:
                     ImGui::Text ("%04X: %02X %02X %6s %02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
                     index += 2;
                 break;
-                case _6502::Mode::ZPX:
+                case CPU::_6502::Mode::ZPX:
                     ImGui::Text ("%04X: %02X %02X %6s", index, read(index), read(index+1), ins_info.mnemonic);
                     index += 2;
                 break;
-                case _6502::Mode::ZPY:
+                case CPU::_6502::Mode::ZPY:
                     ImGui::Text ("%04X: %02X %02X %6s", index, read(index), read(index+1), ins_info.mnemonic);
                     index += 2;
                 break;
