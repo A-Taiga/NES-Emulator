@@ -39,6 +39,7 @@ namespace Debugger
         Window window;
         NES_Data data;
     };
+
 }
 
 #endif

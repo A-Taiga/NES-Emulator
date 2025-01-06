@@ -2,6 +2,7 @@
 #include "MOS6502.h"
 #include "hex_editor.h"
 #include <format>
+#include <cstring>
 
 #include "imgui.h"
 #include "imgui_impl_sdl2.h"
@@ -14,7 +15,6 @@
 #else
 #include <SDL_opengl.h>
 #endif
-
 
 namespace
 {
@@ -52,6 +52,79 @@ namespace
             ImGui::PopID();
         }
 
+        ImGui::End();
+    }
+
+    void decompiler (const Debugger::NES_Data& data)
+    {
+        std::uint16_t index = 0;
+
+        const auto read = [&data](auto index){ return data.pgr_memory[index]; };
+        ImGui::Begin ("Code");
+
+        while (index < data.chr_memory.size())
+        {
+            const auto& ins_info = data.cpu.get_instruction(data.pgr_memory[index]);
+
+            switch (ins_info.mode)
+            {
+                case _6502::Mode::ABS:
+                    ImGui::Text ("%04X: %02X %02X %02X %s $%04X", index, read(index), read(index+1), read(index+1), ins_info.mnemonic, (read(index+1) << 8) | read(index+1));
+                    index += 3;
+                break;
+                case _6502::Mode::ABX:
+                    ImGui::Text ("%04X: %02X %02X %02X %s $%04X, X", index, read(index), read(index+1), read(index+2), ins_info.mnemonic, (read(index+2) << 8) | read(index+1));
+                    index += 3;
+                break;
+                case _6502::Mode::ABY:
+                    ImGui::Text ("%04X: %02X %02X %02X %s", index, read(index), read(index+1), read(index+2), ins_info.mnemonic);
+                    index += 3;
+                break;
+                case _6502::Mode::IMM:
+                    ImGui::Text ("%04X: %02X %02X %6s #$%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    index += 2;
+                break;
+                case _6502::Mode::ACC:
+                case _6502::Mode::IMP:
+                    ImGui::Text ("%04X: %02X %9s", index, read(index), ins_info.mnemonic);
+                    index += 1;
+                break;
+                case _6502::Mode::IND:
+                    ImGui::Text ("%04X: %02X %02X %02X %s", index, read(index), read(index+1), read(index+2), ins_info.mnemonic);
+                    index += 3;
+                break;
+                case _6502::Mode::XIZ:
+                    ImGui::Text ("%04X: %02X %02X %6s $%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    index+= 2;
+                break;
+                case _6502::Mode::YIZ:
+                    ImGui::Text ("%04X: %02X %02X %6s $%02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    index += 2;
+                break;
+                case _6502::Mode::REL:
+                    if (std::strcmp(ins_info.mnemonic, "CPX"))
+                    {
+                        std::uint16_t result = read (index+1);
+                        if (result & 0x80) result |= 0xFF00;
+                        std::uint16_t addr = index+2 + result;
+                        ImGui::Text ("%04X: %02X %02X %6s $%04X", index, read(index), read(index+1), ins_info.mnemonic, addr); 
+                        index += 2;
+                    }
+                break;
+                case _6502::Mode::ZPG:
+                    ImGui::Text ("%04X: %02X %02X %6s %02X", index, read(index), read(index+1), ins_info.mnemonic, read(index+1));
+                    index += 2;
+                break;
+                case _6502::Mode::ZPX:
+                    ImGui::Text ("%04X: %02X %02X %6s", index, read(index), read(index+1), ins_info.mnemonic);
+                    index += 2;
+                break;
+                case _6502::Mode::ZPY:
+                    ImGui::Text ("%04X: %02X %02X %6s", index, read(index), read(index+1), ins_info.mnemonic);
+                    index += 2;
+                break;
+            }
+        }
         ImGui::End();
     }
 }
@@ -122,6 +195,8 @@ void Debugger::GUI::run ()
         ImGui::End();
 
         print_instruction_set(data.cpu);
+
+        decompiler(data);
 
         // Rendering
         ImGui::Render();
