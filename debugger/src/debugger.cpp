@@ -153,7 +153,6 @@ namespace
                 break;
             }
         }
-
         ImGui::End();
     }
 }

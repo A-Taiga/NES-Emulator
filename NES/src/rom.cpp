@@ -2,6 +2,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <stdexcept>
 #include "mapper.h"
 #define DEBUG_ROM
 
@@ -121,6 +122,8 @@ NES_ROM::NES_ROM(const char* file_name)
     switch (mapper_id)
     {
         case 0: mapper = std::make_shared<Mapper_000> (prg_bank_n, chr_bank_n);
+        break;
+        default: throw std::runtime_error("NO MAPPER");
         break;
     }
 
